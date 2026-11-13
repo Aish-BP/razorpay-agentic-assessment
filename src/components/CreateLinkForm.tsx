@@ -3,14 +3,14 @@ import type { FormEvent } from 'react'
 import type { FormErrors, LinkDraft } from '../domain/paymentLinks'
 import { validateDraft } from '../domain/paymentLinks'
 
-const initialDraft: LinkDraft = { amount: '', description: '', contact: '', expiry: '' }
+const initialDraft: LinkDraft = { amount: '', description: '', contact: '', expiry: '', allowPartialPayments: false, minimumFirstPayment: '' }
 type Props = { onCreate: (draft: LinkDraft) => void }
 
 export function CreateLinkForm({ onCreate }: Props) {
   const [draft, setDraft] = useState(initialDraft)
   const [errors, setErrors] = useState<FormErrors>({})
   const [submitted, setSubmitted] = useState(false)
-  const update = (field: keyof LinkDraft, value: string) => {
+  const update = (field: keyof LinkDraft, value: string | boolean) => {
     const next = { ...draft, [field]: value }
     setDraft(next)
     if (submitted) setErrors(validateDraft(next))
@@ -43,6 +43,15 @@ export function CreateLinkForm({ onCreate }: Props) {
       <input id="contact" name="contact" autoComplete="email" placeholder="name@example.com or +91 98765 43210" value={draft.contact} onChange={e => update('contact', e.target.value)} aria-invalid={Boolean(errors.contact)} aria-describedby={errors.contact ? 'contact-error' : undefined} />
       {errors.contact && <p id="contact-error" className="field-error" role="alert">{errors.contact}</p>}
     </div>
+    <div className="partial-toggle">
+      <input id="allowPartialPayments" name="allowPartialPayments" type="checkbox" checked={draft.allowPartialPayments} onChange={e => update('allowPartialPayments', e.target.checked)} />
+      <label htmlFor="allowPartialPayments"><span>Allow partial payments</span><small>Let your customer pay in multiple instalments</small></label>
+    </div>
+    {draft.allowPartialPayments && <div className="field minimum-payment-field">
+      <label htmlFor="minimumFirstPayment">Minimum first payment <span className="required">*</span></label>
+      <div className={`amount-input ${errors.minimumFirstPayment ? 'has-error' : ''}`}><span aria-hidden="true">₹</span><input id="minimumFirstPayment" name="minimumFirstPayment" inputMode="decimal" placeholder="0.00" value={draft.minimumFirstPayment} onChange={e => update('minimumFirstPayment', e.target.value)} aria-invalid={Boolean(errors.minimumFirstPayment)} aria-describedby={errors.minimumFirstPayment ? 'minimum-first-payment-error' : undefined} /></div>
+      {errors.minimumFirstPayment && <p id="minimum-first-payment-error" className="field-error" role="alert">{errors.minimumFirstPayment}</p>}
+    </div>}
     <div className="field">
       <label htmlFor="expiry">Expiry date <span className="optional">OPTIONAL</span></label>
       <input id="expiry" name="expiry" type="date" min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)} value={draft.expiry} onChange={e => update('expiry', e.target.value)} aria-invalid={Boolean(errors.expiry)} aria-describedby={errors.expiry ? 'expiry-error' : undefined} />
